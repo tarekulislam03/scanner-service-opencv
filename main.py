@@ -4,6 +4,7 @@ import io
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import Response, StreamingResponse
 
+# Force deploy 2026-02-05
 app = FastAPI()
 
 def order_points(pts):
