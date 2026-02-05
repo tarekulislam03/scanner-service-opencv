@@ -99,24 +99,19 @@ async def scan_image(file: UploadFile = File(...)):
         if screenCnt is not None:
              processed = four_point_transform(orig, screenCnt.reshape(4, 2) * ratio)
         
-        # Post-Processing: Convert to "Scanned" output (Grayscale + Threshold)
-        # Convert to grayscale
-        processed_gray = cv2.cvtColor(processed, cv2.COLOR_BGR2GRAY)
+        # Post-Processing: Enhance the "scanned" look
+        # 1. Sharpening to make text clearer
+        kernel = np.array([[0, -1, 0],
+                           [-1, 5,-1],
+                           [0, -1, 0]])
+        sharpened = cv2.filter2D(processed, -1, kernel)
+
+        # 2. Slight Contrast/Brightness boost
+        # alpha = 1.2 (contrast), beta = 10 (brightness)
+        enhanced = cv2.convertScaleAbs(sharpened, alpha=1.1, beta=10)
         
-        # Adaptive Threshold used for "Magic Color" or "B&W" effect
-        # Simple B&W scanning effect:
-        # T = cv2.adaptiveThreshold(processed_gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
-        
-        # Improved for "Color Document" look (denoise + slight boost)
-        # OR just simple adaptive for text legibility.
-        # Let's do a crisp B&W for OCR optimization
-        # scan_effect = cv2.adaptiveThreshold(processed_gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 21, 10)
-        
-        # Users often prefer 'magic color' which enhances contrast but keeps color. 
-        # But for 'text extractor', high contrast BW is best.
-        # Let's return the Perspective Warped image in Color but slightly sharpened?
-        # User said "best quality".
-        # Let's try to just return warped image if found, else original, encoded as JPG.
+        # We return the enhanced warped image.
+        processed = enhanced
         
         # Encode
         is_success, buffer = cv2.imencode(".jpg", processed)
